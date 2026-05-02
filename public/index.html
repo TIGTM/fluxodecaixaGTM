@@ -4,45 +4,62 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>GTM Alimentos — Dashboard Financeiro</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
   <style>
     /* ── Reset & Base ──────────────────────────────────────────────────────── */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
-      --bg:        #0d1117;
-      --bg2:       #161b22;
-      --bg3:       #21262d;
-      --border:    #30363d;
-      --text:      #e6edf3;
-      --muted:     #8b949e;
-      --accent:    #f97316;
-      --green:     #3fb950;
-      --red:       #f85149;
-      --blue:      #388bfd;
-      --yellow:    #d29922;
-      --purple:    #a371f7;
-      --cyan:      #39d353;
+      --bg:        #061223;
+      --bg2:       #0c1d35;
+      --bg3:       #152a47;
+      --border:    #223b5d;
+      --text:      #f2f7ff;
+      --muted:     #9eb4ce;
+      --accent:    #f58220;
+      --green:     #31c27b;
+      --red:       #ff5c56;
+      --blue:      #2094c0;
+      --yellow:    #f2bd3f;
+      --purple:    #8d86ff;
+      --cyan:      #39afd8;
       --sidebar-w: 220px;
-      --radius:    8px;
+      --radius:    10px;
     }
     html, body { height: 100%; overflow: hidden; }
-    body { background: var(--bg); color: var(--text); font-family: -apple-system, 'Segoe UI', sans-serif; font-size: 14px; display: flex; }
+    body {
+      background: radial-gradient(circle at 12% -12%, #1b4d7f 0%, #0a1730 38%, #050d1d 100%);
+      color: var(--text);
+      font-family: 'Montserrat', 'Segoe UI', sans-serif;
+      font-size: 14px;
+      display: flex;
+    }
 
     /* ── Autenticacao ─────────────────────────────────────────────────────── */
     .auth-overlay {
       position: fixed; inset: 0; z-index: 10000;
       display: none; align-items: center; justify-content: center;
-      background: rgba(6, 9, 13, .84); backdrop-filter: blur(4px);
+      background: rgba(4, 11, 22, .86); backdrop-filter: blur(6px);
       padding: 20px;
     }
     .auth-overlay.show { display: flex; }
     .auth-card {
       width: min(420px, 100%);
-      background: linear-gradient(180deg, #161b22 0%, #0f141a 100%);
+      background: linear-gradient(180deg, #102747 0%, #0b1a31 100%);
       border: 1px solid var(--border);
       border-radius: 14px;
       box-shadow: 0 20px 56px rgba(0, 0, 0, .5);
       padding: 22px;
+    }
+    .auth-logo {
+      width: 172px;
+      max-width: 100%;
+      height: auto;
+      margin-bottom: 12px;
+      display: block;
+      filter: drop-shadow(0 8px 16px rgba(2, 8, 18, .35));
     }
     .auth-title { font-size: 18px; font-weight: 700; margin-bottom: 6px; }
     .auth-subtitle { font-size: 12px; color: var(--muted); margin-bottom: 14px; }
@@ -50,7 +67,7 @@
     .auth-input {
       width: 100%; padding: 10px 12px;
       border-radius: var(--radius); border: 1px solid var(--border);
-      background: #0d1117; color: var(--text);
+      background: var(--bg3); color: var(--text);
       font-size: 14px; outline: none;
     }
     .auth-input:focus { border-color: var(--accent); }
@@ -67,15 +84,24 @@
 
     /* ── Sidebar ───────────────────────────────────────────────────────────── */
     #sidebar {
-      width: var(--sidebar-w); min-height: 100vh; background: var(--bg2);
+      width: var(--sidebar-w); min-height: 100vh;
+      background: linear-gradient(180deg, #102746 0%, #0b1b32 100%);
       border-right: 1px solid var(--border); display: flex; flex-direction: column;
       padding: 0; flex-shrink: 0;
     }
     .logo {
-      padding: 20px 16px 16px; border-bottom: 1px solid var(--border);
+      padding: 18px 16px 14px;
+      border-bottom: 1px solid var(--border);
+      background: linear-gradient(160deg, rgba(31,148,192,.20) 0%, rgba(245,130,32,.10) 100%);
     }
-    .logo-title { font-size: 15px; font-weight: 700; color: var(--accent); }
-    .logo-sub   { font-size: 11px; color: var(--muted); margin-top: 2px; }
+    .logo-mark {
+      width: 176px;
+      max-width: 100%;
+      height: auto;
+      display: block;
+      filter: drop-shadow(0 8px 16px rgba(2, 9, 20, .35));
+    }
+    .logo-sub { font-size: 11px; color: #dce8f8; margin-top: 8px; letter-spacing: .3px; font-weight: 600; }
 
     nav { flex: 1; padding: 8px 0; }
     .nav-section { padding: 12px 16px 4px; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); }
@@ -85,7 +111,7 @@
       transition: all .15s; color: var(--muted); font-size: 13px;
     }
     .nav-item:hover { background: var(--bg3); color: var(--text); }
-    .nav-item.active { background: rgba(249,115,22,.1); border-left-color: var(--accent); color: var(--accent); }
+    .nav-item.active { background: rgba(245,130,32,.16); border-left-color: var(--accent); color: #ffd6b0; }
     .nav-item .ico { width: 18px; text-align: center; font-size: 16px; }
     .nav-temp-hidden { display: none !important; }
 
@@ -97,19 +123,26 @@
 
     /* Topbar */
     #topbar {
-      height: 52px; background: var(--bg2); border-bottom: 1px solid var(--border);
+      height: 52px;
+      background: linear-gradient(180deg, rgba(14,32,58,.96) 0%, rgba(11,25,45,.96) 100%);
+      border-bottom: 1px solid var(--border);
       display: flex; align-items: center; justify-content: space-between;
       padding: 0 24px; flex-shrink: 0;
     }
-    #page-title { font-size: 16px; font-weight: 600; }
+    #page-title { font-size: 16px; font-weight: 700; letter-spacing: .2px; }
     .topbar-actions { display: flex; gap: 8px; align-items: center; }
     .btn {
       padding: 6px 14px; border-radius: var(--radius); border: 1px solid var(--border);
       background: var(--bg3); color: var(--text); cursor: pointer; font-size: 12px;
       transition: all .15s;
     }
-    .btn:hover { background: var(--accent); border-color: var(--accent); color: #fff; }
-    .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .btn:hover { background: rgba(245,130,32,.2); border-color: var(--accent); color: #fff; }
+    .btn.primary {
+      background: linear-gradient(135deg, #f58220 0%, #ff9439 100%);
+      border-color: #f58220;
+      color: #fff;
+      box-shadow: 0 8px 20px rgba(245,130,32,.28);
+    }
     .btn.primary:hover { opacity: .85; }
     select.btn { padding: 5px 10px; }
     #emp-select {
@@ -133,7 +166,9 @@
     .kpi-row.col-2 { grid-template-columns: repeat(2, 1fr); }
 
     .card {
-      background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius);
+      background: linear-gradient(180deg, rgba(14,30,53,.92) 0%, rgba(11,24,43,.92) 100%);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
       padding: 16px;
     }
     .kpi-card { padding: 16px 20px; }
@@ -785,6 +820,7 @@
 
 <div id="auth-overlay" class="auth-overlay">
   <div class="auth-card">
+    <img class="auth-logo" src="/brand/gtm-alimentos-logo-footer.svg" alt="GTM Alimentos" />
     <div class="auth-title">Acesso restrito</div>
     <div class="auth-subtitle" id="auth-subtitle">Entre com seu usuario local para acessar o dashboard.</div>
     <form id="auth-form" class="auth-form">
@@ -804,7 +840,7 @@
 <!-- ── SIDEBAR ──────────────────────────────────────────────────────────────── -->
 <aside id="sidebar">
   <div class="logo">
-    <div class="logo-title">💰 GTM Alimentos</div>
+    <img class="logo-mark" src="/brand/gtm-alimentos-logo-footer.svg" alt="GTM Alimentos" />
     <div class="logo-sub">Dashboard Financeiro</div>
   </div>
   <nav>
