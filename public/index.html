@@ -648,7 +648,6 @@
       }
       #chart-fluxo { height: 280px !important; }
       #chart-fluxo-mensal,
-      #chart-fluxo-critico,
       #chart-aging-pizza,
       #chart-aging-barras,
       #chart-margens-familia,
@@ -656,6 +655,7 @@
       #chart-margens-evolucao,
       #chart-ops-familia,
       #chart-ops-status { height: 220px !important; }
+      #chart-fluxo-critico { height: 250px !important; }
 
       .table-card {
         overflow-x: auto;
@@ -1451,6 +1451,15 @@ function fmtMoedaCompacta(v) {
   return n.toLocaleString('pt-BR');
 }
 
+function chartTooltip(options = {}) {
+  return {
+    confine: true,
+    appendToBody: true,
+    extraCssText: 'max-width:min(300px,86vw);white-space:normal;word-break:break-word;',
+    ...options,
+  };
+}
+
 // Inicializa data inputs e hero de data
 (function initFluxo() {
   const hoje = new Date();
@@ -1652,7 +1661,7 @@ function renderFluxoSparkline(sparkline) {
 
   c.setOption({
     ...THEME,
-    tooltip: { trigger:'axis', formatter: p => p[0].axisValue+'<br/>'+p.map(s=>`${s.marker}${s.seriesName}: <b>${fmt.moeda(s.value)}</b>`).join('<br/>') },
+    tooltip: chartTooltip({ trigger:'axis', formatter: p => p[0].axisValue+'<br/>'+p.map(s=>`${s.marker}${s.seriesName}: <b>${fmt.moeda(s.value)}</b>`).join('<br/>') }),
     legend:  { data:['A pagar','A receber','Saldo esperado'], top:0, textStyle:{color:'#8b949e',fontSize:9}, itemWidth:10, itemHeight:8 },
     grid:    { left:0, right:0, top:22, bottom:14, containLabel:true },
     xAxis:   { type:'category', data:sparkline.map(r=>r.data), axisLabel:{color:'#8b949e',fontSize:8} },
@@ -1708,7 +1717,7 @@ function renderFluxoChart(serie) {
 
     c.setOption({
       ...THEME,
-      tooltip: {
+      tooltip: chartTooltip({
         trigger:'item',
         formatter: p => {
           const i = p.dataIndex;
@@ -1727,7 +1736,7 @@ function renderFluxoChart(serie) {
           }
           return `<strong>${p.seriesName}</strong><br/>Data: ${data}<br/>Valor: <b>${fmt.moeda(valor)}</b>`;
         },
-      },
+      }),
       legend:  {
         type: modoCompacto ? 'scroll' : 'plain',
         data:['Saldo Esperado', 'Recebidos', 'A receber', 'Pagos', 'A pagar', 'Saldo Inicial'],
@@ -1791,11 +1800,11 @@ function renderFluxoChart(serie) {
 
   c.setOption({
     ...THEME,
-    tooltip: { trigger:'axis', axisPointer:{type:'cross'}, formatter: params => {
+    tooltip: chartTooltip({ trigger:'axis', axisPointer:{type:'cross'}, formatter: params => {
       let h = params[0].axisValue+'<br/>';
       params.forEach(p => { h += `${p.marker} ${p.seriesName}: <b>${fmt.moeda(p.value)}</b><br/>`; });
       return h;
-    }},
+    }}),
     legend:  { data:['Entradas','Saídas','Saldo Acumulado'], textStyle:{color:'#8b949e', fontSize:modoCompacto ? 10 : 12}, top:0 },
     grid:    { left:modoCompacto ? 58 : 80, right:modoCompacto ? 8 : 20, top:modoCompacto ? 58 : 40, bottom:modoCompacto ? 66 : 60 },
     xAxis:   {
@@ -1848,7 +1857,7 @@ function renderFluxoMensal(serie) {
   });
   c.setOption({
     ...THEME,
-    tooltip: { trigger:'axis', formatter:p=>p.map(s=>`${s.marker}${s.seriesName}: <b>${fmt.moeda(s.value)}</b>`).join('<br/>') },
+    tooltip: chartTooltip({ trigger:'axis', formatter:p=>p.map(s=>`${s.marker}${s.seriesName}: <b>${fmt.moeda(s.value)}</b>`).join('<br/>') }),
     legend:  {
       type: modoCompacto ? 'scroll' : 'plain',
       data:['Entradas','Saídas'],
@@ -1875,11 +1884,30 @@ function renderFluxoCritico(serie) {
   const top10 = [...serie].sort((a,b)=>b.saidas-a.saidas).slice(0,10);
   c.setOption({
     ...THEME,
-    tooltip: { trigger:'axis' },
-    grid:    { left:modoCompacto ? 68 : 80, right:10, top:10, bottom:10 },
-    xAxis:   { type:'value', axisLabel:{formatter:v=>modoCompacto ? fmtMoedaCompacta(v) : 'R$'+v.toLocaleString('pt-BR'), color:'#8b949e',fontSize:modoCompacto ? 8 : 9}, splitLine:{lineStyle:{color:'#21262d'}} },
-    yAxis:   { type:'category', data:top10.map(r=>modoCompacto ? fmtDataCurta(r.data) : r.data), axisLabel:{color:'#8b949e',fontSize:modoCompacto ? 9 : 10} },
-    series:  [{ name:'Saídas', type:'bar', barMaxWidth: modoCompacto ? 14 : 24, data:top10.map(r=>r.saidas), itemStyle:{color:'#f85149'}, label:{show:true,position:'right',formatter:p=>modoCompacto ? fmtMoedaCompacta(p.value) : 'R$'+Number(p.value).toLocaleString('pt-BR',{minimumFractionDigits:0}),fontSize:modoCompacto ? 8 : 9,color:'#e6edf3'} }],
+    tooltip: chartTooltip({ trigger:'axis', axisPointer:{ type:'shadow' } }),
+    grid:    {
+      left:modoCompacto ? 74 : 86,
+      right:modoCompacto ? 58 : 76,
+      top:modoCompacto ? 16 : 14,
+      bottom:modoCompacto ? 26 : 22,
+      containLabel:true,
+    },
+    xAxis:   {
+      type:'value',
+      axisLabel:{
+        formatter:v=>modoCompacto ? fmtMoedaCompacta(v) : 'R$'+v.toLocaleString('pt-BR'),
+        color:'#8b949e',
+        fontSize:modoCompacto ? 8 : 9,
+        margin: 10,
+      },
+      splitLine:{lineStyle:{color:'#21262d'}},
+    },
+    yAxis:   {
+      type:'category',
+      data:top10.map(r=>modoCompacto ? fmtDataCurta(r.data) : r.data),
+      axisLabel:{color:'#8b949e',fontSize:modoCompacto ? 9 : 10, margin: 8},
+    },
+    series:  [{ name:'Saídas', type:'bar', barMaxWidth: modoCompacto ? 14 : 24, data:top10.map(r=>r.saidas), itemStyle:{color:'#f85149'}, label:{show:true,position:'right',distance:6,formatter:p=>modoCompacto ? fmtMoedaCompacta(p.value) : 'R$'+Number(p.value).toLocaleString('pt-BR',{minimumFractionDigits:0}),fontSize:modoCompacto ? 8 : 9,color:'#e6edf3'} }],
   });
 }
 
