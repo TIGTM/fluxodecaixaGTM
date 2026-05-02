@@ -1,0 +1,37 @@
+# Variáveis de ambiente — nunca commitar
+.env
+.env.*
+!.env.example
+
+# Dependências
+node_modules/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Credenciais, chaves e tokens
+*.key
+*.pem
+*.p12
+secrets/
+.secrets/
+credentials.json
+service-account*.json
+
+# Arquivos de contexto/memória (podem conter dados sensíveis)
+memory.md
+audit.log
+.data/
+
+# Sistema operacional
+.DS_Store
+Thumbs.db
+
+# Editores
+.vscode/
+.idea/
+
+# Backups
+*.bak
+*.zip
