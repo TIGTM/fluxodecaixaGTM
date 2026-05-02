@@ -23,10 +23,27 @@ const PORT      = process.env.PORT || 3400;
 const SESSION_TTL_MS = Number(process.env.SESSION_TTL_MS || 8 * 60 * 60 * 1000);
 const SESSION_SECRET = process.env.SESSION_SECRET || 'fluxo-caixa-dev-change-me';
 
+if (process.env.NODE_ENV === 'production' && (!process.env.SESSION_SECRET || SESSION_SECRET === 'fluxo-caixa-dev-change-me')) {
+  throw new Error('SESSION_SECRET deve ser definido em producao com valor forte.');
+}
+
 // ─── Middlewares ──────────────────────────────────────────────────────────────
+app.disable('x-powered-by');
 app.set('trust proxy', 1);
 app.use(cors({ origin: true, credentials: true }));
-app.use(express.json());
+app.use(express.json({ limit: '100kb' }));
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+
+  const isHttps = req.secure || String(req.headers['x-forwarded-proto'] || '').toLowerCase() === 'https';
+  if (isHttps) {
+    res.setHeader('Strict-Transport-Security', 'max-age=15552000; includeSubDomains');
+  }
+  next();
+});
+
 app.use(session({
   name: 'fluxo.sid',
   secret: SESSION_SECRET,
@@ -60,9 +77,18 @@ app.use('/api', rateLimit({
 const loginLimiter = rateLimit({
   windowMs: 10 * 60 * 1000,
   max: 12,
+  skipSuccessfulRequests: true,
   standardHeaders: true,
   legacyHeaders: false,
   message: { ok: false, erro: 'Muitas tentativas de login. Aguarde alguns minutos.' },
+});
+
+const registerLimiter = rateLimit({
+  windowMs: 30 * 60 * 1000,
+  max: 8,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { ok: false, erro: 'Muitas tentativas de cadastro. Tente novamente mais tarde.' },
 });
 
 // Arquivos estáticos
@@ -87,10 +113,10 @@ function iniciarSessao(req, res, user, statusCode = 200) {
   });
 }
 
-app.post('/api/auth/register', loginLimiter, async (req, res) => {
+app.post('/api/auth/register', registerLimiter, async (req, res) => {
   try {
-    const { nome, login, senha } = req.body || {};
-    const resultado = await cadastrarUsuarioLocal({ nome, login, senha });
+    const { nome, login, senha, cpf } = req.body || {};
+    const resultado = await cadastrarUsuarioLocal({ nome, login, senha, cpf });
 
     if (!resultado.ok) {
       return res.status(resultado.status || 400).json({ ok: false, erro: resultado.erro });

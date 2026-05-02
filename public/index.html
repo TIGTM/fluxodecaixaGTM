@@ -852,6 +852,7 @@
     <div class="auth-subtitle" id="auth-subtitle">Entre com seu usuario local para acessar o dashboard.</div>
     <form id="auth-form" class="auth-form">
       <input id="auth-nome" class="auth-input" type="text" placeholder="Nome" autocomplete="name" style="display:none" />
+      <input id="auth-cpf" class="auth-input" type="text" placeholder="CPF" inputmode="numeric" maxlength="14" style="display:none" />
       <input id="auth-login" class="auth-input" type="text" placeholder="Usuario" autocomplete="username" required />
       <input id="auth-senha" class="auth-input" type="password" placeholder="Senha" autocomplete="current-password" required />
       <button class="btn primary" id="auth-submit" type="submit">Entrar</button>
@@ -1268,6 +1269,37 @@ let _autoRefreshTimer = null;
 let _authMode = 'login';
 const nativeFetch = window.fetch.bind(window);
 
+function normalizeCpfInput(value) {
+  return String(value || '').replace(/\D+/g, '');
+}
+
+function formatCpfInput(value) {
+  const digits = normalizeCpfInput(value).slice(0, 11);
+  if (digits.length <= 3) return digits;
+  if (digits.length <= 6) return `${digits.slice(0, 3)}.${digits.slice(3)}`;
+  if (digits.length <= 9) return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6)}`;
+  return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9)}`;
+}
+
+function cpfEhValido(value) {
+  const cpf = normalizeCpfInput(value);
+  if (!/^\d{11}$/.test(cpf)) return false;
+  if (/^(\d)\1{10}$/.test(cpf)) return false;
+
+  const calcDigito = (base, fatorInicial) => {
+    let soma = 0;
+    for (let i = 0; i < base.length; i += 1) soma += Number(base[i]) * (fatorInicial - i);
+    const resto = (soma * 10) % 11;
+    return resto === 10 ? 0 : resto;
+  };
+
+  const d1 = calcDigito(cpf.slice(0, 9), 10);
+  if (d1 !== Number(cpf[9])) return false;
+
+  const d2 = calcDigito(cpf.slice(0, 10), 11);
+  return d2 === Number(cpf[10]);
+}
+
 function setAuthError(msg = '') {
   const el = document.getElementById('auth-error');
   if (el) el.textContent = msg;
@@ -1279,12 +1311,13 @@ function setAuthMode(mode = 'login') {
 
   const subtitle = document.getElementById('auth-subtitle');
   const nome = document.getElementById('auth-nome');
+  const cpf = document.getElementById('auth-cpf');
   const submit = document.getElementById('auth-submit');
   const toggle = document.getElementById('auth-toggle-mode');
 
   if (subtitle) {
     subtitle.textContent = isRegister
-      ? 'Crie uma conta local simples para acessar o dashboard.'
+      ? 'Cadastre-se com CPF autorizado para acessar o dashboard.'
       : 'Entre com seu usuario local para acessar o dashboard.';
   }
 
@@ -1292,6 +1325,12 @@ function setAuthMode(mode = 'login') {
     nome.style.display = isRegister ? '' : 'none';
     nome.required = isRegister;
     if (!isRegister) nome.value = '';
+  }
+
+  if (cpf) {
+    cpf.style.display = isRegister ? '' : 'none';
+    cpf.required = isRegister;
+    if (!isRegister) cpf.value = '';
   }
 
   if (submit) submit.textContent = isRegister ? 'Cadastrar' : 'Entrar';
@@ -1364,11 +1403,23 @@ async function submitAuth(event) {
 
   const btn = document.getElementById('auth-submit');
   const nome = (document.getElementById('auth-nome')?.value || '').trim();
+  const cpf = (document.getElementById('auth-cpf')?.value || '').trim();
   const login = (document.getElementById('auth-login')?.value || '').trim();
   const senha = document.getElementById('auth-senha')?.value || '';
+  const cpfNorm = normalizeCpfInput(cpf);
 
   if (_authMode === 'register' && !nome) {
     setAuthError('Informe o nome para cadastro.');
+    return;
+  }
+
+  if (_authMode === 'register' && !cpfNorm) {
+    setAuthError('Informe o CPF para cadastro.');
+    return;
+  }
+
+  if (_authMode === 'register' && !cpfEhValido(cpfNorm)) {
+    setAuthError('CPF invalido.');
     return;
   }
 
@@ -1379,7 +1430,7 @@ async function submitAuth(event) {
 
   const isRegister = _authMode === 'register';
   const endpoint = isRegister ? '/api/auth/register' : '/api/auth/login';
-  const payload = isRegister ? { nome, login, senha } : { login, senha };
+  const payload = isRegister ? { nome, login, senha, cpf: cpfNorm } : { login, senha };
 
   btn.disabled = true;
   btn.textContent = isRegister ? 'Cadastrando...' : 'Entrando...';
@@ -2473,6 +2524,9 @@ async function initializeDashboard() {
 
 async function initApp() {
   document.getElementById('auth-form')?.addEventListener('submit', submitAuth);
+  document.getElementById('auth-cpf')?.addEventListener('input', (event) => {
+    event.target.value = formatCpfInput(event.target.value);
+  });
   document.getElementById('auth-toggle-mode')?.addEventListener('click', () => {
     setAuthMode(_authMode === 'login' ? 'register' : 'login');
   });
