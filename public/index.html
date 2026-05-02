@@ -655,7 +655,7 @@
       #chart-margens-evolucao,
       #chart-ops-familia,
       #chart-ops-status { height: 220px !important; }
-      #chart-fluxo-critico { height: 250px !important; }
+      #chart-fluxo-critico { height: 290px !important; }
 
       .table-card {
         overflow-x: auto;
@@ -1452,10 +1452,32 @@ function fmtMoedaCompacta(v) {
 }
 
 function chartTooltip(options = {}) {
+  const pad = 8;
   return {
+    renderMode: 'html',
     confine: true,
     appendToBody: true,
-    extraCssText: 'max-width:min(300px,86vw);white-space:normal;word-break:break-word;',
+    extraCssText: 'max-width:min(300px,86vw);white-space:normal;word-break:break-word;pointer-events:none;',
+    position: (pos, params, dom, rect, size) => {
+      const pointX = Array.isArray(pos) ? Number(pos[0] || 0) : 0;
+      const pointY = Array.isArray(pos) ? Number(pos[1] || 0) : 0;
+
+      const viewW = Number(size?.viewSize?.[0] || window.innerWidth || 0);
+      const viewH = Number(size?.viewSize?.[1] || window.innerHeight || 0);
+      const boxW = Number(size?.contentSize?.[0] || dom?.offsetWidth || 0);
+      const boxH = Number(size?.contentSize?.[1] || dom?.offsetHeight || 0);
+
+      let x = pointX + 12;
+      let y = pointY - boxH - 12;
+
+      if (x + boxW + pad > viewW) x = pointX - boxW - 12;
+      if (x < pad) x = pad;
+
+      if (y < pad) y = pointY + 12;
+      if (y + boxH + pad > viewH) y = Math.max(pad, viewH - boxH - pad);
+
+      return [x, y];
+    },
     ...options,
   };
 }
@@ -1889,7 +1911,7 @@ function renderFluxoCritico(serie) {
       left:modoCompacto ? 74 : 86,
       right:modoCompacto ? 58 : 76,
       top:modoCompacto ? 16 : 14,
-      bottom:modoCompacto ? 26 : 22,
+      bottom:modoCompacto ? 40 : 30,
       containLabel:true,
     },
     xAxis:   {
@@ -1898,7 +1920,7 @@ function renderFluxoCritico(serie) {
         formatter:v=>modoCompacto ? fmtMoedaCompacta(v) : 'R$'+v.toLocaleString('pt-BR'),
         color:'#8b949e',
         fontSize:modoCompacto ? 8 : 9,
-        margin: 10,
+        margin: modoCompacto ? 14 : 10,
       },
       splitLine:{lineStyle:{color:'#21262d'}},
     },
