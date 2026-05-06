@@ -223,5 +223,33 @@ export async function autenticarUsuarioLocal(login, senha) {
     return { ok: false, status: 401, erro: 'Usuario ou senha invalidos.' };
   }
 
+  if (REQUIRE_CPF_ALLOWLIST) {
+    const allowedCpfSet = await loadAllowedCpfSet();
+    if (!allowedCpfSet.size) {
+      return {
+        ok: false,
+        status: 403,
+        erro: 'Login indisponivel. Contate o administrador.',
+      };
+    }
+
+    const userCpfNorm = normalizeCpf(user.cpfNorm || user.cpf);
+    if (!userCpfNorm) {
+      return {
+        ok: false,
+        status: 403,
+        erro: 'Usuario sem CPF autorizado. Contate o administrador.',
+      };
+    }
+
+    if (!allowedCpfSet.has(userCpfNorm)) {
+      return {
+        ok: false,
+        status: 403,
+        erro: 'CPF sem permissao de acesso.',
+      };
+    }
+  }
+
   return { ok: true, user: toPublicUser(user) };
 }
